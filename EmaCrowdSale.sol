@@ -1,19 +1,16 @@
 pragma solidity ^ 0.4 .18;
 import "./EmaToken.sol";
 import "./Ownable.sol";
-import "./Whitelist.sol";
 import "./Crowdsale.sol";
 
 contract EmaCrowdSale is Crowdsale {
-    uint256 public hardcap;
-    uint256 public starttime;
-    Crowdsale public csale;
-    using SafeMath for uint256;
-    constructor(address wallet, MiniMeToken token, uint256 startTime, uint256 cap) Crowdsale(wallet, token, starttime) public onlyOwner {
 
-        hardcap = cap;
-        starttime = startTime;
-        setCrowdsale(wallet, token, startTime);
+
+    using SafeMath
+    for uint256;
+    constructor(address wallet, MiniMeToken token) Crowdsale(wallet, token) public  {
+
+        setCrowdsale(wallet, token);
     }
 
     function tranferPresaleTokens(address investor, uint256 ammount) public onlyOwner {
@@ -31,7 +28,7 @@ contract EmaCrowdSale is Crowdsale {
         token.claimTokens(claimToken);
     }
 
-    function() external payable onlyWhitelisted whenNotPaused {
+    function() external payable whenNotPaused {
 
         emit buyx(msg.sender, this, _getTokenAmount(msg.value));
 
