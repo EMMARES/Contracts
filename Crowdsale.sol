@@ -2,9 +2,22 @@ pragma solidity ^ 0.4 .18;
 import "./ERC20.sol";
 import "./SafeMath.sol";
 import "./MiniMeToken.sol";
-import "./Whitelist.sol";
+import "./Pausable.sol";
 
-contract Crowdsale is Whitelist {
+
+/**
+ * @title Crowdsale
+ * @dev Crowdsale is a base contract for managing a token crowdsale,
+ * allowing investors to purchase tokens with ether. This contract implements
+ * such functionality in its most fundamental form and can be extended to provide additional
+ * functionality and/or custom behavior.
+ * The external interface represents the basic interface for purchasing tokens, and conform
+ * the base architecture for crowdsales. They are *not* intended to be modified / overriden.
+ * The internal interface conforms the extensible and modifiable surface of crowdsales. Override
+ * the methods to add functionality. Consider using 'super' where appropiate to concatenate
+ * behavior.
+ */
+contract Crowdsale is Pausable {
     using SafeMath
     for uint256;
     // The token being sold
@@ -15,8 +28,8 @@ contract Crowdsale is Whitelist {
     uint256 public rate = 6120;
     // Amount of tokens sold
     uint256 public tokensSold;
-    //Star of the crowdsale
-    uint256 startTime;
+    uint256 public allCrowdSaleTokens = 255000000000000000000000000; //255M tokens available for crowdsale
+
 
 
 
@@ -31,17 +44,17 @@ contract Crowdsale is Whitelist {
 
     event buyx(address buyer, address contractAddr, uint256 amount);
 
-    constructor(address _wallet, MiniMeToken _token, uint256 starttime) public {
+    constructor(address _wallet, MiniMeToken _token) public {
 
         require(_wallet != address(0));
         require(_token != address(0));
 
         wallet = _wallet;
         token = _token;
-        startTime = starttime;
+
     }
 
-    function setCrowdsale(address _wallet, MiniMeToken _token, uint256 starttime) public {
+    function setCrowdsale(address _wallet, MiniMeToken _token) internal {
 
 
         require(_wallet != address(0));
@@ -49,7 +62,7 @@ contract Crowdsale is Whitelist {
 
         wallet = _wallet;
         token = _token;
-        startTime = starttime;
+
     }
 
 
@@ -70,27 +83,41 @@ contract Crowdsale is Whitelist {
      */
     function buyTokens(address _beneficiary) public whenNotPaused payable {
 
-        if ((tokensSold > 20884500000000000000000000) && (tokensSold <= 30791250000000000000000000)) {
-            rate = 5967;
-        } else if ((tokensSold > 30791250000000000000000000) && (tokensSold <= 39270000000000000000000000)) {
-            rate = 5865;
-        } else if ((tokensSold > 39270000000000000000000000) && (tokensSold <= 46856250000000000000000000)) {
-            rate = 5610;
-        } else if ((tokensSold > 46856250000000000000000000) && (tokensSold <= 35700000000000000000000000)) {
-            rate = 5355;
-        } else if (tokensSold > 35700000000000000000000000) {
-            rate = 5100;
+
+        if ((msg.value >= 500000000000000000000) && (msg.value < 1000000000000000000000)) {
+            rate = 7140;
+        } else if (msg.value >= 1000000000000000000000) {
+            rate = 7650;
+        } else if (tokensSold <= 21420000000000000000000000) {
+            if(rate != 6120) {
+            rate = 6120; }
+        } else if ((tokensSold > 21420000000000000000000000) && (tokensSold <= 42304500000000000000000000)) {
+             if(rate != 5967) {
+            rate = 5967; }
+        } else if ((tokensSold > 42304500000000000000000000) && (tokensSold <= 73095750000000000000000000)) {
+             if(rate != 5865) {
+            rate = 5865; }
+        } else if ((tokensSold > 73095750000000000000000000) && (tokensSold <= 112365750000000000000000000)) {
+             if(rate != 5610) {
+            rate = 5610; }
+        } else if ((tokensSold > 112365750000000000000000000) && (tokensSold <= 159222000000000000000000000)) {
+             if(rate != 5355) {
+            rate = 5355; }
+        } else if (tokensSold > 159222000000000000000000000) {
+             if(rate != 5100) {
+            rate = 5100;}
         }
 
 
         uint256 weiAmount = msg.value;
         uint256 tokens = _getTokenAmount(weiAmount);
-        tokensSold = tokensSold.add(tokens);
+
         _processPurchase(_beneficiary, tokens);
         emit TokenPurchase(msg.sender, _beneficiary, weiAmount, tokens);
         _updatePurchasingState(_beneficiary, weiAmount);
         _forwardFunds();
         _postValidatePurchase(_beneficiary, weiAmount);
+        tokensSold = allCrowdSaleTokens.sub(token.balanceOf(this));
     }
 
     // -----------------------------------------
@@ -146,6 +173,31 @@ contract Crowdsale is Whitelist {
      * @return Number of tokens that can be purchased with the specified _weiAmount
      */
     function _getTokenAmount(uint256 _weiAmount) internal returns(uint256) {
+
+
+        if ((_weiAmount >= 500000000000000000000) && (_weiAmount < 1000000000000000000000)) {
+            rate = 7140;
+        } else if (_weiAmount >= 1000000000000000000000) {
+            rate = 7650;
+        } else if (tokensSold <= 21420000000000000000000000) {
+            if(rate != 6120) {
+            rate = 6120; }
+        } else if ((tokensSold > 21420000000000000000000000) && (tokensSold <= 42304500000000000000000000)) {
+             if(rate != 5967) {
+            rate = 5967;}
+        } else if ((tokensSold > 42304500000000000000000000) && (tokensSold <= 73095750000000000000000000)) {
+             if(rate != 5865) {
+            rate = 5865;}
+        } else if ((tokensSold > 73095750000000000000000000) && (tokensSold <= 112365750000000000000000000)) {
+             if(rate != 5610) {
+            rate = 5610;}
+        } else if ((tokensSold > 112365750000000000000000000) && (tokensSold <= 159222000000000000000000000)) {
+             if(rate != 5355) {
+            rate = 5355;}
+        } else if (tokensSold > 159222000000000000000000000) {
+             if(rate != 5100) {
+            rate = 5100;}
+        }
 
         return _weiAmount.mul(rate);
     }
